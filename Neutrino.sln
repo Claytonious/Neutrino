@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeutrinoCore", "NeutrinoCore\NeutrinoCore.csproj", "{7775CDCB-1DDA-464A-B490-AC28F44E6C5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeutrinoTests", "NeutrinoTests\NeutrinoTests.csproj", "{16566F07-E0DB-4FFD-9ADE-ACB9F28D7104}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{16566F07-E0DB-4FFD-9ADE-ACB9F28D7104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16566F07-E0DB-4FFD-9ADE-ACB9F28D7104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16566F07-E0DB-4FFD-9ADE-ACB9F28D7104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16566F07-E0DB-4FFD-9ADE-ACB9F28D7104}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7775CDCB-1DDA-464A-B490-AC28F44E6C5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7775CDCB-1DDA-464A-B490-AC28F44E6C5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7775CDCB-1DDA-464A-B490-AC28F44E6C5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7775CDCB-1DDA-464A-B490-AC28F44E6C5B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = NeutrinoCore\NeutrinoCore.csproj
+	EndGlobalSection
+EndGlobal
