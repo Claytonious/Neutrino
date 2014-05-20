@@ -16,7 +16,7 @@ namespace Neutrino.Core.Messages
 
 		public byte Id { get; set; }
 		public bool IsGuaranteed { get; set; }
-		public ConnectedClient Client { get; set; }
+		public NetworkPeer Source { get; set; }
 		public byte SequenceNumber { get; set; }
 
 		public int Write(byte[] buffer)
@@ -37,7 +37,7 @@ namespace Neutrino.Core.Messages
 			var result = (NetworkMessage)(GetType().GetConstructor(Type.EmptyTypes).Invoke(emptyArgs));
 			MsgPackSerializer.DeserializeObject(result, cloneBuffer, 0);
 			result.SequenceNumber = SequenceNumber;
-			result.Client = Client;
+			result.Source = Source;
 			result.IsGuaranteed = IsGuaranteed;
 			result.Id = Id;
 			return result;

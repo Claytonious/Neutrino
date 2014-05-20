@@ -16,13 +16,13 @@ namespace Neutrino.Core
 			};
 			CreateClient = () =>
 			{
-				return new ConnectedClient();
+				return new NetworkPeer();
 			};
 		}
 
 		public const int MaxPendingGuaranteedMessages = 255;
 
-		public static Func<ConnectedClient> CreateClient { get; set; }
+		public static Func<NetworkPeer> CreateClient { get; set; }
 		public static Action<NeutrinoLogLevel, string> OnLog { get; set; }
 		public static NeutrinoLogLevel LogLevel { get; set; }
 

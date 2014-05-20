@@ -20,8 +20,8 @@ namespace Neutrino.Core
 		private byte[] receiveBuffer = new byte[NeutrinoConfig.MaxMessageSize];
 		private EndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
 		private NetworkMessageFactory msgFactory = new NetworkMessageFactory();
-		private Dictionary<IPEndPoint, ConnectedClient> clientsByEndpoint = new Dictionary<IPEndPoint, ConnectedClient>();
-		private Dictionary<ConnectedClient, IPEndPoint> endpointsByClient = new Dictionary<ConnectedClient, IPEndPoint>();
+		private Dictionary<IPEndPoint, NetworkPeer> clientsByEndpoint = new Dictionary<IPEndPoint, NetworkPeer>();
+		private Dictionary<NetworkPeer, IPEndPoint> endpointsByClient = new Dictionary<NetworkPeer, IPEndPoint>();
 		private string localNickname;
 		private ConcurrentPool<ReceivedBuffer> receivedBuffers = new ConcurrentPool<ReceivedBuffer>(10);
 		private List<ReceivedBuffer> readyBuffers = new List<ReceivedBuffer>();
@@ -74,8 +74,8 @@ namespace Neutrino.Core
 		}
 
 		public Action<NetworkMessage> OnReceived { get; set; }
-		public Action<ConnectedClient> OnClientConnected { get; set; }
-		public Action<ConnectedClient> OnClientDisconnected { get; set; }
+		public Action<NetworkPeer> OnClientConnected { get; set; }
+		public Action<NetworkPeer> OnClientDisconnected { get; set; }
 
 		public string ServerHostname { get; set; }
 		public int ServerPort { get; set; }
@@ -179,7 +179,7 @@ namespace Neutrino.Core
 
 		private void HandleMessageReceived(IPEndPoint receivedFrom, byte[] buffer, int numBytesReceived)
 		{
-			ConnectedClient client = null;
+			NetworkPeer client = null;
 			if (clientsByEndpoint.TryGetValue(receivedFrom, out client))
 			{
 				client.HandleMessageReceived(buffer, numBytesReceived);
@@ -246,21 +246,21 @@ namespace Neutrino.Core
 				}
 			}
 #endif
-			foreach (ConnectedClient c in clientsByEndpoint.Values)
+			foreach (NetworkPeer c in clientsByEndpoint.Values)
 				c.Update();
 		}
 
 		public void SendToAll(NetworkMessage msg)
 		{
-			foreach (ConnectedClient client in clientsByEndpoint.Values)
+			foreach (NetworkPeer client in clientsByEndpoint.Values)
 				client.SendNetworkMessage(msg);
 		}
 
-		public IEnumerable<ConnectedClient> ConnectedClients
+		public IEnumerable<NetworkPeer> ConnectedClients
 		{
 			get
 			{
-				foreach (ConnectedClient c in clientsByEndpoint.Values)
+				foreach (NetworkPeer c in clientsByEndpoint.Values)
 					yield return c;
 			}
 		}
@@ -270,7 +270,7 @@ namespace Neutrino.Core
 			get
 			{
 				int num = 0;
-				foreach (ConnectedClient c in clientsByEndpoint.Values)
+				foreach (NetworkPeer c in clientsByEndpoint.Values)
 					num += c.NumberOfOutboundMessages;
 				return num;
 			}

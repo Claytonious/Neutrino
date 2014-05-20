@@ -7,7 +7,7 @@ using Neutrino.Core.Messages;
 
 namespace Neutrino.Core
 {
-	public class ConnectedClient
+	public class NetworkPeer
 	{
 		private IPEndPoint endpoint;
 		private NetworkMessageFactory msgFactory;
@@ -17,7 +17,7 @@ namespace Neutrino.Core
 		private byte[] idempotentSequenceNumbers = new byte[NeutrinoConfig.MaxPendingGuaranteedMessages];
 		private Dictionary<int, NetworkMessage> pendingOutOfSequenceMessages = new Dictionary<int, NetworkMessage>();
 
-		public ConnectedClient()
+		public NetworkPeer()
 		{
 		}
 
@@ -50,7 +50,7 @@ namespace Neutrino.Core
 		{
 			foreach (var msg in msgFactory.Read(buffer, numBytesReceived))
 			{
-				msg.Client = this;
+				msg.Source = this;
 				AckMessage ackMsg = msg as AckMessage;
 				if (ackMsg != null)
 					outboundQueue.HandleAckMessage(ackMsg);
