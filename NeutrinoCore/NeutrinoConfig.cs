@@ -20,7 +20,7 @@ namespace Neutrino.Core
 			};
 		}
 
-		public const int MaxPendingGuaranteedMessages = 255;
+		public const int MaxPendingGuaranteedMessages = ushort.MaxValue - 1;
 
 		public static Func<NetworkPeer> CreateClient { get; set; }
 		public static Action<NeutrinoLogLevel, string> OnLog { get; set; }

@@ -46,7 +46,7 @@ namespace Neutrino.Core
 			outboundQueue.Enqueue(msg);
 		}
 
-		internal void HandleMessageReceived(byte[] buffer, int numBytesReceived)
+		internal void ProcessMessage(byte[] buffer, int numBytesReceived)
 		{
 			foreach (var msg in msgFactory.Read(buffer, numBytesReceived))
 			{
@@ -62,7 +62,9 @@ namespace Neutrino.Core
 					{
 						sequenceNumber = msg.SequenceNumber;
 						if (idempotentSequenceNumbers[sequenceNumber] == 1)
+						{
 							shouldHandle = false;
+						}
 						else
 						{
 							idempotentSequenceNumbers[sequenceNumber] = 1;
@@ -77,14 +79,14 @@ namespace Neutrino.Core
 					}
 					if (shouldHandle)
 					{
-						HandleMessageReceived(msg);
+						ProcessMessage(msg);
 						for (int i = sequenceNumber + 1; i < NeutrinoConfig.MaxPendingGuaranteedMessages; i++)
 						{
 							NetworkMessage pendingMessage = null;
 							if (pendingOutOfSequenceMessages.TryGetValue(i, out pendingMessage))
 							{
 								pendingOutOfSequenceMessages.Remove(i);
-								HandleMessageReceived(pendingMessage);
+								ProcessMessage(pendingMessage);
 							}
 							else
 								break;
@@ -92,21 +94,24 @@ namespace Neutrino.Core
 					}
 					if (msg.IsGuaranteed)
 					{
-						ackMessage.AckedSequenceNumber = (byte)sequenceNumber;
+						ackMessage.AckedSequenceNumber = (ushort)sequenceNumber;
 						SendNetworkMessage(ackMessage);
 					}
 				}
 			}
 		}
 
-		private void HandleMessageReceived(NetworkMessage msg)
+		private void ProcessMessage(NetworkMessage msg)
 		{
 			ResetNetworkIdsMessage resetMsg = msg as ResetNetworkIdsMessage;
 			if (resetMsg != null)
 			{
-				NeutrinoConfig.LogWarning(node.Name + " " + Nickname + " resetting guaranteed ids!");
 				Array.Clear(idempotentSequenceNumbers, 0, idempotentSequenceNumbers.Length);
-				pendingOutOfSequenceMessages.Clear();
+				if (pendingOutOfSequenceMessages.Count != 0)
+				{
+					NeutrinoConfig.LogError(node.Name + " there were still pending messages when resetting id's!");
+					pendingOutOfSequenceMessages.Clear();
+				}
 			}
 			node.OnReceived(msg);
 		}

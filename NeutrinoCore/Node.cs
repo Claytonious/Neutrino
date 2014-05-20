@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-
 #if DEBUG
 using CenterSpace.Free;
 #endif
@@ -99,13 +98,13 @@ namespace Neutrino.Core
 						address = addresses.FirstOrDefault<IPAddress>(x => x.AddressFamily == AddressFamily.InterNetworkV6);
 					if (address == null)
 						throw new ApplicationException("Unable to find an IP address for server [" + ServerHostname + "]");
-					var serverClient = NeutrinoConfig.CreateClient();
-					serverClient.Init(this, serverSocket, address, ServerPort, "Server");
+					var serverPeer = NeutrinoConfig.CreateClient();
+					serverPeer.Init(this, serverSocket, address, ServerPort, "Server");
 					IPEndPoint serverEndpoint = new IPEndPoint(address, ServerPort);
-					clientsByEndpoint[serverEndpoint] = serverClient;
-					endpointsByClient[serverClient] = serverEndpoint;
+					clientsByEndpoint[serverEndpoint] = serverPeer;
+					endpointsByClient[serverPeer] = serverEndpoint;
 					if (OnClientConnected != null)
-						OnClientConnected(serverClient);
+						OnClientConnected(serverPeer);
 
 					var connectMsg = msgFactory.Get<ConnectMessage>();
 					connectMsg.Nickname = localNickname;
@@ -182,11 +181,12 @@ namespace Neutrino.Core
 			NetworkPeer client = null;
 			if (clientsByEndpoint.TryGetValue(receivedFrom, out client))
 			{
-				client.HandleMessageReceived(buffer, numBytesReceived);
+				client.ProcessMessage(buffer, numBytesReceived);
 			}
 			else
 			{
-				NeutrinoConfig.Log("Received " + numBytesReceived + " from potentially new client at " + receivedFrom);
+				if (NeutrinoConfig.LogLevel == NeutrinoLogLevel.Debug)
+					NeutrinoConfig.Log("Received from potentially new client at " + receivedFrom);
 				List<NetworkMessage> initialMessages = new List<NetworkMessage>(msgFactory.Read(buffer, numBytesReceived));
 				var connectMsg = initialMessages.FirstOrDefault<NetworkMessage>(x => (x is ConnectMessage));
 				if (connectMsg == null)
@@ -201,7 +201,7 @@ namespace Neutrino.Core
 					endpointsByClient[newClient] = (IPEndPoint)receivedFrom;
 					if (OnClientConnected != null)
 						OnClientConnected(newClient);
-					newClient.HandleMessageReceived(buffer, numBytesReceived);
+					newClient.ProcessMessage(buffer, numBytesReceived);
 				}
 			}
 		}

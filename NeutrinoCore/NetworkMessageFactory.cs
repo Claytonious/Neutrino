@@ -37,20 +37,10 @@ namespace Neutrino.Core
 				var result = messages[buffer[overallOffset]];
 				if (result.IsGuaranteed)
 				{
-					result.SequenceNumber = buffer[overallOffset + 1];
-					offset = 2;
+					result.SequenceNumber = (ushort)((buffer[overallOffset + 1]) + (buffer[overallOffset + 2] << 8));
+					offset = 3;
 				}
-				//if (NeutrinoConfig.LogLevel == NeutrinoLogLevel.Debug)
-				//NeutrinoConfig.Log("Factory read message at offset " + overallOffset + " type " + buffer[0] + " which is " + result);
-				try
-				{
-					overallOffset = MsgPackSerializer.DeserializeObject(result, buffer, overallOffset + offset);
-				}
-				catch(Exception)
-				{
-					NeutrinoConfig.LogError("Failed to deserialize " + result.GetType() + " from buffer at position " + (overallOffset + offset) + ": " + Utility.ToByteString(buffer, buffer.Length));
-					throw;
-				}
+				overallOffset = MsgPackSerializer.DeserializeObject(result, buffer, overallOffset + offset);
 				yield return result;
 			}
 		}
@@ -61,8 +51,8 @@ namespace Neutrino.Core
 			var result = messages[buffer[0]];
 			if (result.IsGuaranteed)
 			{
-				result.SequenceNumber = buffer[1];
-				offset = 2;
+				result.SequenceNumber = (ushort)(buffer[1] + (buffer[2] << 8));
+				offset = 3;
 			}
 			MsgPackSerializer.DeserializeObject(result, buffer, offset);
 			return result;

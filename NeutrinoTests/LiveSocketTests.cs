@@ -37,12 +37,12 @@ namespace Neutrino.Tests
 			{
 				serverNode.OnClientConnected += newClient =>
 				{
-					NeutrinoConfig.Log("Server received connect: " + newClient);
+					Console.Out.WriteLine("Server received connect: " + newClient);
 					serverReceivedConnect = true;
 				};
 				serverNode.OnReceived += msg =>
 				{
-					NeutrinoConfig.Log("Server received msg: " + msg);
+					Console.Out.WriteLine("Server received msg: " + msg);
 					if (msg is ConnectMessage)
 						serverReceivedConnect = true;
 				};
@@ -81,7 +81,7 @@ namespace Neutrino.Tests
 				};
 				serverNode.OnReceived += msg =>
 				{
-					NeutrinoConfig.Log("Server received msg: " + msg);
+					Console.Out.WriteLine("Server received msg: " + msg);
 					if (msg is HelloMessage)
 					{
 						var reply = serverNode.GetMessage<HelloReply>();
@@ -99,7 +99,7 @@ namespace Neutrino.Tests
 					};
 					clientNode.OnReceived += msg =>
 					{
-						NeutrinoConfig.Log("Client received msg: " + msg);
+						Console.Out.WriteLine("Client received msg: " + msg);
 						if (msg is HelloReply)
 							++numReceivedClient;
 					};
@@ -145,7 +145,7 @@ namespace Neutrino.Tests
 				};
 				serverNode.OnReceived = msg =>
 				{
-					NeutrinoConfig.Log("Server received msg: " + msg);
+					Console.Out.WriteLine("Server received msg: " + msg);
 
 					HelloMessage helloMsg = msg as HelloMessage;
 					if (helloMsg != null)
@@ -168,7 +168,7 @@ namespace Neutrino.Tests
 					{
 						if (msg is HelloReply)
 						{
-							NeutrinoConfig.Log("Client received msg: " + msg);
+							Console.Out.WriteLine("Client received msg: " + msg);
 							++numReceivedClient;
 						}
 					};
@@ -213,7 +213,7 @@ namespace Neutrino.Tests
 			{
 				serverNode.OnReceived += msg =>
 				{
-					NeutrinoConfig.Log("Server received msg: " + msg);
+					Console.Out.WriteLine("Server received msg: " + msg);
 					if (msg is SampleGuaranteedMessage)
 					{
 						++numReceivedServer;
@@ -229,7 +229,7 @@ namespace Neutrino.Tests
 				{
 					clientNode.OnReceived += msg =>
 					{
-						NeutrinoConfig.Log("Client received msg: " + msg);
+						Console.Out.WriteLine("Client received msg: " + msg);
 						if (msg is SampleGuaranteedMessage)
 						{
 							++numReceivedClient;
@@ -270,7 +270,7 @@ namespace Neutrino.Tests
 			{
 				serverNode.OnReceived = msg =>
 				{
-					NeutrinoConfig.Log("Server received msg: " + msg);
+					Console.Out.WriteLine("Server received msg: " + msg);
 					SampleGuaranteedMessage sampleMsg = msg as SampleGuaranteedMessage;
 					if (sampleMsg != null)
 					{
@@ -288,7 +288,7 @@ namespace Neutrino.Tests
 				{
 					clientNode.OnReceived = msg =>
 					{
-						NeutrinoConfig.Log("Client received msg: " + msg);
+						Console.Out.WriteLine("Client received msg: " + msg);
 						SampleGuaranteedMessage sampleMsg = msg as SampleGuaranteedMessage;
 						if (sampleMsg != null)
 						{
@@ -406,8 +406,7 @@ namespace Neutrino.Tests
 
 					Console.Out.WriteLine("Beginning guaranteed messages...");
 
-					// To cross the 253 idempotence barrier we would have to relax the sequential requirements of the checks above, no need here
-					const int numToSend = 253;
+					const int numToSend = 1000;
 					var clientMsg = clientNode.GetMessage<SampleGuaranteedMessage>();
 					for (int i = 0; i < numToSend; i++)
 					{

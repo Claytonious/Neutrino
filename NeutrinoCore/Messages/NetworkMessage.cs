@@ -17,7 +17,7 @@ namespace Neutrino.Core.Messages
 		public byte Id { get; set; }
 		public bool IsGuaranteed { get; set; }
 		public NetworkPeer Source { get; set; }
-		public byte SequenceNumber { get; set; }
+		public ushort SequenceNumber { get; set; }
 
 		public int Write(byte[] buffer)
 		{
@@ -25,8 +25,9 @@ namespace Neutrino.Core.Messages
 			buffer[0] = Id;
 			if (IsGuaranteed)
 			{
-				buffer[1] = SequenceNumber;
-				offset = 2;
+				buffer[1] = (byte)(SequenceNumber & 0x00FF);
+				buffer[2] = (byte)((SequenceNumber & 0xFF00) >> 8);
+				offset = 3;
 			}
 			return MsgPackSerializer.SerializeObject(this, buffer, offset);
 		}

@@ -12,14 +12,14 @@ namespace Neutrino.Core
 	{
 		private List<OutboundMessage> outboundMessages = new List<OutboundMessage>();
 		private Pool<OutboundMessage> outboundMessagePool = new Pool<OutboundMessage>(100);
-		private Dictionary<byte,OutboundMessage> outboundMessagesBySequence = new Dictionary<byte, OutboundMessage>();
+		private Dictionary<ushort,OutboundMessage> outboundMessagesBySequence = new Dictionary<ushort, OutboundMessage>();
 		private List<byte[]> pendingResetOutboundMessages = new List<byte[]>();
-		private byte nextSequence = 0;
+		private ushort nextSequence = 0;
 		private bool isResetPending;
 		private IPEndPoint remoteEndpoint;
 		private Socket socket;
 		private byte[] outboundBuffer = new byte[NeutrinoConfig.MaxMessageSize];
-		private const int maxGuaranteedBeforeReset = 254;
+		private const int maxGuaranteedBeforeReset = NeutrinoConfig.MaxPendingGuaranteedMessages - 1;
 		private NetworkMessageFactory msgFactory;
 		private Node node;
 
@@ -118,10 +118,7 @@ namespace Neutrino.Core
 				{
 					if (offset + outboundMessage.PayloadLength >= outboundBuffer.Length)
 					{
-						//NeutrinoConfig.Log(node.Name + " sending1 " + Utility.ToByteString(outboundBuffer, offset));
 						socket.SendTo(outboundBuffer, offset, SocketFlags.None, remoteEndpoint);
-						//if (IsVerbose)
-						//	NeutrinoConfig.Log ("Sent " + numInBatch + " messages in packet size " + offset);
 						offset = 0;
 						numInBatch = 0;
 					}
@@ -132,10 +129,7 @@ namespace Neutrino.Core
 
 					if (i == outboundMessages.Count - 1)
 					{
-						//NeutrinoConfig.Log(node.Name + " sending2 " + Utility.ToByteString(outboundBuffer, offset));
 						socket.SendTo(outboundBuffer, offset, SocketFlags.None, remoteEndpoint);
-						//if (IsVerbose)
-						//	NeutrinoConfig.Log ("Sent " + numInBatch + " messages in packet size " + offset);
 						offset = 0;
 						numInBatch = 0;
 					}

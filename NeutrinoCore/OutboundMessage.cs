@@ -9,7 +9,7 @@ namespace Neutrino.Core
 			Payload = new byte[NeutrinoConfig.MaxMessageSize];
 		}
 
-		internal byte SequenceNumber { get; set; }
+		internal ushort SequenceNumber { get; set; }
 		internal byte[] Payload { get; set; }
 		internal bool NeedsAck { get; set; }
 		internal int PayloadLength { get; set; }

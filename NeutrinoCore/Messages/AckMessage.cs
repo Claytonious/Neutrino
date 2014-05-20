@@ -10,7 +10,7 @@ namespace Neutrino.Core.Messages
 		}
 
 		[MessagePackMember(0)]
-		public byte AckedSequenceNumber { get; set; }
+		public ushort AckedSequenceNumber { get; set; }
 
 		public override string ToString()
 		{
