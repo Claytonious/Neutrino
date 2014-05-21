@@ -35,7 +35,7 @@ namespace Neutrino.Tests
 
 			using (var serverNode = TestBootstrap.BuildServer())
 			{
-				serverNode.OnClientConnected += newClient =>
+				serverNode.OnPeerConnected += newClient =>
 				{
 					Console.Out.WriteLine("Server received connect: " + newClient);
 					serverReceivedConnect = true;
@@ -66,6 +66,79 @@ namespace Neutrino.Tests
 		}
 
 		[Test]
+		public void TestDisconnect()
+		{
+			int serverReceivedConnectMillis = 0;
+			int clientReceivedConnectMillis = 0;
+			int serverReceivedDisconnectMillis = 0;
+			int clientReceivedDisconnectMillis = 0;
+			int quietTime = 0;
+
+			using (var serverNode = TestBootstrap.BuildServer())
+			{
+				serverNode.OnPeerConnected = newClient =>
+				{
+					Console.Out.WriteLine("Server received connect: " + newClient);
+					serverReceivedConnectMillis = Environment.TickCount;
+				};
+				serverNode.OnPeerDisconnected = newClient =>
+				{
+					Console.Out.WriteLine("Server received disconnect: " + newClient);
+					serverReceivedDisconnectMillis = Environment.TickCount;
+				};
+				serverNode.OnReceived = msg =>
+				{
+					serverNode.SendToAll(serverNode.GetMessage<HelloReply>());
+				};
+				serverNode.Start();
+
+				using (var clientNode = TestBootstrap.BuildClient())
+				{
+					NeutrinoConfig.PeerTimeoutMillis = 5000;
+
+					clientNode.OnPeerConnected = newPeer =>
+					{
+						Console.Out.WriteLine("Client received connect: " + newPeer);
+						clientReceivedConnectMillis = Environment.TickCount;
+					};
+					clientNode.OnPeerDisconnected = newPeer =>
+					{
+						Console.Out.WriteLine("Client received disconnect: " + newPeer);
+						clientReceivedDisconnectMillis = Environment.TickCount;
+					};
+					clientNode.OnReceived = receivedMsg =>
+					{
+					};
+
+					clientNode.Start();
+
+					var msg = clientNode.GetMessage<HelloMessage>();
+					for (int i = 0; i < 600; i++)
+					{
+						clientNode.SendToAll(msg);
+						clientNode.Update();
+						serverNode.Update();
+						Thread.Sleep(10);
+					}
+
+					quietTime = Environment.TickCount;
+					for (int i = 0; i < 1000; i++)
+					{
+						clientNode.Update();
+						serverNode.Update();
+						Thread.Sleep(10);
+					}
+				}
+			}
+			Assert.Greater(serverReceivedConnectMillis, 0);
+			Assert.Greater(clientReceivedConnectMillis, 0);
+			Assert.GreaterOrEqual(serverReceivedDisconnectMillis - quietTime, 5000);
+			Assert.LessOrEqual(serverReceivedDisconnectMillis - quietTime, 10000);
+			Assert.GreaterOrEqual(clientReceivedDisconnectMillis - quietTime, 5000);
+			Assert.LessOrEqual(clientReceivedDisconnectMillis - quietTime, 10000);
+		}
+
+		[Test]
 		public void TestSimpleMessage()
 		{
 			int numReceivedServer = 0;
@@ -75,7 +148,7 @@ namespace Neutrino.Tests
 
 			using (var serverNode = TestBootstrap.BuildServer())
 			{
-				serverNode.OnClientConnected += client =>
+				serverNode.OnPeerConnected += client =>
 				{
 					++numConnectsReceivedServer;
 				};
@@ -93,7 +166,7 @@ namespace Neutrino.Tests
 
 				using (var clientNode = TestBootstrap.BuildClient())
 				{
-					clientNode.OnClientConnected += client =>
+					clientNode.OnPeerConnected += client =>
 					{
 						++numConnectsReceivedClient;
 					};
@@ -107,7 +180,7 @@ namespace Neutrino.Tests
 					clientNode.Start();
 
 					var helloMsg = clientNode.GetMessage<HelloMessage>();
-					//helloMsg.Text = "Hello there, my little friend";
+					helloMsg.Text = "Hello there, my little friend";
 					clientNode.SendToAll(helloMsg);
 
 					for (int i = 0; i < 10; i++)
@@ -139,7 +212,7 @@ namespace Neutrino.Tests
 
 			using (var serverNode = TestBootstrap.BuildServer())
 			{
-				serverNode.OnClientConnected += client =>
+				serverNode.OnPeerConnected += client =>
 				{
 					++numConnectsReceivedServer;
 				};
@@ -160,7 +233,7 @@ namespace Neutrino.Tests
 
 				using (var clientNode = TestBootstrap.BuildClient())
 				{
-					clientNode.OnClientConnected += client =>
+					clientNode.OnPeerConnected += client =>
 					{
 						++numConnectsReceivedClient;
 					};
@@ -310,12 +383,12 @@ namespace Neutrino.Tests
 					}
 
 					int numOutbound = 0;
-					foreach (var client in clientNode.ConnectedClients)
+					foreach (var client in clientNode.ConnectedPeers)
 						numOutbound += client.NumberOfOutboundMessages;
 					Assert.AreEqual(0, numOutbound, "Client should have purged and ack'ed all messages at this point");
 
 					numOutbound = 0;
-					foreach (var client in serverNode.ConnectedClients)
+					foreach (var client in serverNode.ConnectedPeers)
 						numOutbound += client.NumberOfOutboundMessages;
 					Assert.AreEqual(0, numOutbound, "Server should have purged and ack'ed all messages at this point");
 
@@ -392,12 +465,12 @@ namespace Neutrino.Tests
 					}
 
 					int numOutbound = 0;
-					foreach (var client in clientNode.ConnectedClients)
+					foreach (var client in clientNode.ConnectedPeers)
 						numOutbound += client.NumberOfOutboundMessages;
 					Assert.AreEqual(0, numOutbound, "Client should have purged and ack'ed all messages at this point");
 
 					numOutbound = 0;
-					foreach (var client in serverNode.ConnectedClients)
+					foreach (var client in serverNode.ConnectedPeers)
 						numOutbound += client.NumberOfOutboundMessages;
 					Assert.AreEqual(0, numOutbound, "Server should have purged and ack'ed all messages at this point");
 

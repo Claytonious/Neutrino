@@ -16,6 +16,8 @@ namespace Neutrino.Core
 		private AckMessage ackMessage;
 		private byte[] idempotentSequenceNumbers = new byte[NeutrinoConfig.MaxPendingGuaranteedMessages];
 		private Dictionary<int, NetworkMessage> pendingOutOfSequenceMessages = new Dictionary<int, NetworkMessage>();
+		private int previousActivityTimeTicks;
+		private bool isConnected = true;
 
 		public NetworkPeer()
 		{
@@ -29,6 +31,12 @@ namespace Neutrino.Core
 			this.endpoint = new IPEndPoint(address, port);
 			outboundQueue = new OutboundQueue(node, this.endpoint, socket);
 			ackMessage = msgFactory.Get<AckMessage>();
+			previousActivityTimeTicks = Environment.TickCount;
+		}
+
+		public IPEndPoint Endpoint
+		{
+			get { return endpoint; }
 		}
 
 		public int NumberOfOutboundMessages
@@ -46,8 +54,19 @@ namespace Neutrino.Core
 			outboundQueue.Enqueue(msg);
 		}
 
-		internal void ProcessMessage(byte[] buffer, int numBytesReceived)
+		public void Disconnect()
 		{
+			isConnected = false;
+		}
+
+		public bool IsConnected
+		{
+			get { return isConnected; }
+		}
+
+		internal void HandleMessageReceived(byte[] buffer, int numBytesReceived)
+		{
+			previousActivityTimeTicks = Environment.TickCount;
 			foreach (var msg in msgFactory.Read(buffer, numBytesReceived))
 			{
 				msg.Source = this;
@@ -119,11 +138,18 @@ namespace Neutrino.Core
 		internal void Update()
 		{
 			outboundQueue.Send();
+			int ticksSinceActivity = Environment.TickCount - previousActivityTimeTicks;
+			if (ticksSinceActivity >= NeutrinoConfig.PeerTimeoutMillis)
+			{
+				if (NeutrinoConfig.LogLevel == NeutrinoLogLevel.Debug)
+					NeutrinoConfig.Log("Disconnecting peer " + this + " because of inactivity for " + ticksSinceActivity + " millis");
+				Disconnect();
+			}
 		}
 
 		public override string ToString()
 		{
-			return string.Format("[ConnectedClient: Nickname={0}]", Nickname);
+			return string.Format("[NetworkPeer: Endpoint={0}, NumberOfOutboundMessages={1}, Nickname={2}]", Endpoint, NumberOfOutboundMessages, Nickname);
 		}
 	}
 }

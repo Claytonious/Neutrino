@@ -19,8 +19,8 @@ namespace Neutrino.Core
 		private byte[] receiveBuffer = new byte[NeutrinoConfig.MaxMessageSize];
 		private EndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
 		private NetworkMessageFactory msgFactory = new NetworkMessageFactory();
-		private Dictionary<IPEndPoint, NetworkPeer> clientsByEndpoint = new Dictionary<IPEndPoint, NetworkPeer>();
-		private Dictionary<NetworkPeer, IPEndPoint> endpointsByClient = new Dictionary<NetworkPeer, IPEndPoint>();
+		private Dictionary<IPEndPoint, NetworkPeer> peersByEndpoint = new Dictionary<IPEndPoint, NetworkPeer>();
+		private Dictionary<NetworkPeer, IPEndPoint> endpointsByPeer = new Dictionary<NetworkPeer, IPEndPoint>();
 		private string localNickname;
 		private ConcurrentPool<ReceivedBuffer> receivedBuffers = new ConcurrentPool<ReceivedBuffer>(10);
 		private List<ReceivedBuffer> readyBuffers = new List<ReceivedBuffer>();
@@ -28,6 +28,7 @@ namespace Neutrino.Core
 		private MersenneTwister randomGenerator;
 		private List<DeferredReceivable> receivedBuffersForShuffling = new List<DeferredReceivable>();
 #endif
+		private List<NetworkPeer> peersPendingDisconnect = new List<NetworkPeer>();
 
 		public Node(int wellKnownPort, params Assembly[] messageAssemblies)
 		{
@@ -73,8 +74,8 @@ namespace Neutrino.Core
 		}
 
 		public Action<NetworkMessage> OnReceived { get; set; }
-		public Action<NetworkPeer> OnClientConnected { get; set; }
-		public Action<NetworkPeer> OnClientDisconnected { get; set; }
+		public Action<NetworkPeer> OnPeerConnected { get; set; }
+		public Action<NetworkPeer> OnPeerDisconnected { get; set; }
 
 		public string ServerHostname { get; set; }
 		public int ServerPort { get; set; }
@@ -98,13 +99,13 @@ namespace Neutrino.Core
 						address = addresses.FirstOrDefault<IPAddress>(x => x.AddressFamily == AddressFamily.InterNetworkV6);
 					if (address == null)
 						throw new ApplicationException("Unable to find an IP address for server [" + ServerHostname + "]");
-					var serverPeer = NeutrinoConfig.CreateClient();
+					var serverPeer = NeutrinoConfig.CreatePeer();
 					serverPeer.Init(this, serverSocket, address, ServerPort, "Server");
 					IPEndPoint serverEndpoint = new IPEndPoint(address, ServerPort);
-					clientsByEndpoint[serverEndpoint] = serverPeer;
-					endpointsByClient[serverPeer] = serverEndpoint;
-					if (OnClientConnected != null)
-						OnClientConnected(serverPeer);
+					peersByEndpoint[serverEndpoint] = serverPeer;
+					endpointsByPeer[serverPeer] = serverEndpoint;
+					if (OnPeerConnected != null)
+						OnPeerConnected(serverPeer);
 
 					var connectMsg = msgFactory.Get<ConnectMessage>();
 					connectMsg.Nickname = localNickname;
@@ -178,30 +179,30 @@ namespace Neutrino.Core
 
 		private void HandleMessageReceived(IPEndPoint receivedFrom, byte[] buffer, int numBytesReceived)
 		{
-			NetworkPeer client = null;
-			if (clientsByEndpoint.TryGetValue(receivedFrom, out client))
+			NetworkPeer peer = null;
+			if (peersByEndpoint.TryGetValue(receivedFrom, out peer))
 			{
-				client.ProcessMessage(buffer, numBytesReceived);
+				peer.HandleMessageReceived(buffer, numBytesReceived);
 			}
 			else
 			{
 				if (NeutrinoConfig.LogLevel == NeutrinoLogLevel.Debug)
-					NeutrinoConfig.Log("Received from potentially new client at " + receivedFrom);
+					NeutrinoConfig.Log("Received from potentially new peer at " + receivedFrom);
 				List<NetworkMessage> initialMessages = new List<NetworkMessage>(msgFactory.Read(buffer, numBytesReceived));
 				var connectMsg = initialMessages.FirstOrDefault<NetworkMessage>(x => (x is ConnectMessage));
 				if (connectMsg == null)
 				{
-					NeutrinoConfig.Log("Ignoring client who didn't send a ConnectMessage with his initial traffic");
+					NeutrinoConfig.Log("Ignoring peer who didn't send a ConnectMessage with his initial traffic");
 				}
 				else
 				{
-					var newClient = NeutrinoConfig.CreateClient();
-					newClient.Init(this, serverSocket, receivedFrom.Address, receivedFrom.Port, ((ConnectMessage)connectMsg).Nickname);
-					clientsByEndpoint[(IPEndPoint)receivedFrom] = newClient;
-					endpointsByClient[newClient] = (IPEndPoint)receivedFrom;
-					if (OnClientConnected != null)
-						OnClientConnected(newClient);
-					newClient.ProcessMessage(buffer, numBytesReceived);
+					var newPeer = NeutrinoConfig.CreatePeer();
+					newPeer.Init(this, serverSocket, receivedFrom.Address, receivedFrom.Port, ((ConnectMessage)connectMsg).Nickname);
+					peersByEndpoint[(IPEndPoint)receivedFrom] = newPeer;
+					endpointsByPeer[newPeer] = (IPEndPoint)receivedFrom;
+					if (OnPeerConnected != null)
+						OnPeerConnected(newPeer);
+					newPeer.HandleMessageReceived(buffer, numBytesReceived);
 				}
 			}
 		}
@@ -246,21 +247,28 @@ namespace Neutrino.Core
 				}
 			}
 #endif
-			foreach (NetworkPeer c in clientsByEndpoint.Values)
+			foreach (NetworkPeer c in peersByEndpoint.Values)
+			{
 				c.Update();
+				if (!c.IsConnected)
+					peersPendingDisconnect.Add(c);
+			}
+			foreach (NetworkPeer c in peersPendingDisconnect)
+				DisconnectPeer(c);
+			peersPendingDisconnect.Clear();
 		}
 
 		public void SendToAll(NetworkMessage msg)
 		{
-			foreach (NetworkPeer client in clientsByEndpoint.Values)
-				client.SendNetworkMessage(msg);
+			foreach (NetworkPeer peer in peersByEndpoint.Values)
+				peer.SendNetworkMessage(msg);
 		}
 
-		public IEnumerable<NetworkPeer> ConnectedClients
+		public IEnumerable<NetworkPeer> ConnectedPeers
 		{
 			get
 			{
-				foreach (NetworkPeer c in clientsByEndpoint.Values)
+				foreach (NetworkPeer c in peersByEndpoint.Values)
 					yield return c;
 			}
 		}
@@ -270,10 +278,20 @@ namespace Neutrino.Core
 			get
 			{
 				int num = 0;
-				foreach (NetworkPeer c in clientsByEndpoint.Values)
+				foreach (NetworkPeer c in peersByEndpoint.Values)
 					num += c.NumberOfOutboundMessages;
 				return num;
 			}
+		}
+
+		internal void DisconnectPeer(NetworkPeer peer)
+		{
+			if (NeutrinoConfig.LogLevel == NeutrinoLogLevel.Debug)
+				NeutrinoConfig.Log("Peer disconnected: " + peer);
+			if (OnPeerDisconnected != null)
+				OnPeerDisconnected(peer);
+			peersByEndpoint.Remove(peer.Endpoint);
+			endpointsByPeer.Remove(peer);
 		}
 	}
 }
