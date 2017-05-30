@@ -103,3 +103,7 @@ Once you've instantiated a Node, to "run" the network layer simply call its `Upd
 You should probably call this method at something slightly higher than the rate at which your app needs to actually handle messages. For example, an action based first person shooter might want to call this method at something like 12 times per second, whereas a slower paced tactical wargame or physics-based vehicular game might only need to call this 4 times per second. Data oriented, non-game apps might get away with calling this extremely rarely, such as once every few seconds. Experiment with this rate and choose the lowest rate that still delivers acceptable performance for your users.
 
 The `Update()` method is thread-safe so it can be called from a background thread, but make sure to consistently call it from the *same* thread.
+
+## Dependencies
+Neutrino makes use of [the MsgPack-Sharp library](https://github.com/scopely/msgpack-sharp) to serialize and deserialize network messages in an extremely lean binary format that minimizes GC heap churn.
+
