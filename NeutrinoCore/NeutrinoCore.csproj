@@ -32,7 +32,6 @@
     <Reference Include="msgpack-sharp">
       <HintPath>..\lib\msgpack-sharp.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
