@@ -4,7 +4,7 @@
 A low-latency, high performance network library for real-time apps and games, based entirely on UDP and written in C#. Neutrino works with either the full-blown CLR or with Unity3D, Xamarin, and other constrained and/or AOT runtimes. It is cross-platform and is regularly tested on Linux, Mac, Windows, iOS, and Android. It's well suited for use on both server and client or in a peer-to-peer topology.
 
 # Features
-Neutrino is built on UDP. It supports both guaranteed and unguaranteed messages, but does so purely with UDP. For reasoning about our avoidance of TCP even for guaranteed messages, see [this paper](http://www.isoc.org/INET97/proceedings/F3/F3_1.HTM#s2).
+Neutrino is built on UDP. It supports both guaranteed and unguaranteed messages, but does so purely with UDP. For reasoning about our avoidance of TCP even for guaranteed messages, see [this article](http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/) and [this paper](http://www.isoc.org/INET97/proceedings/F3/F3_1.HTM#s2).
 
 Neutrino handles UDP socket traffic asynchronously on your behalf. It does so with basic threading that is safe and performant even on mobile devices. This pattern is suitable for one or hundreds of network peers per machine, so it's great for things like clients and real-time servers. However, this pattern isn't well suited to very high scale single-server scenarios (such as tens of thousands of clients on a single machine).
 
