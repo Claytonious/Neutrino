@@ -67,7 +67,7 @@ public class PlayerPositionMessage : NetworkMessage
 }
 ```
 
-Use a simple sequence number to uniquely identify each property. Inheritance is supported. All primitives are supported, as well as references to other messages, and collections of `List<T>` and `Dictionary<T,U>`. Raw arrays and other collections are not supported.
+Use a simple sequence number to uniquely identify each property. Inheritance is supported. All primitives are supported, as well as references to other messages, and collections of `List<T>` and `Dictionary<T,U>`.
 
 *IMPORTANT*: Neutrino minimizes garbage collection pressure by aggressively reusing instances of your messages. Once you've defined a message type, don't manually create new instances of it for transmission to other peers. Instead, use the `Node.GetMessage<T>()` method to get instances. This will be covered below.
 
