@@ -53,7 +53,7 @@ namespace Neutrino.Tests
 					clientNode.Start();
 
 					bool continueRunning = true;
-					TestBootstrap.RunNetwork(() => 
+					TestBootstrap.RunNetwork(() =>
 					{
 						return continueRunning && !serverReceivedConnect;
 					}, serverNode, clientNode);
@@ -198,7 +198,7 @@ namespace Neutrino.Tests
 					Assert.AreEqual(1, numReceivedClient, "Client should have received 1 HelloReply");
 				}
 			}
-		}	
+		}
 
 		[Test]
 		public void TestSimpleReplies()
@@ -274,7 +274,7 @@ namespace Neutrino.Tests
 					Assert.AreEqual(numToSend, numReceivedClient);
 				}
 			}
-		}	
+		}
 
 		[Test]
 		public void TestIdempotence()
@@ -331,7 +331,7 @@ namespace Neutrino.Tests
 					Assert.AreEqual(1, numReceivedServer);
 				}
 			}
-		}	
+		}
 
 		[Test]
 		public void TestGuaranteed()
@@ -415,7 +415,7 @@ namespace Neutrino.Tests
 					Assert.AreEqual(100, previousReceivedClient);
 				}
 			}
-		}	
+		}
 
 		[Test]
 		public void TestLossAndOrder()
@@ -474,9 +474,12 @@ namespace Neutrino.Tests
 						numOutbound += client.NumberOfOutboundMessages;
 					Assert.AreEqual(0, numOutbound, "Server should have purged and ack'ed all messages at this point");
 
+#if DEBUG
 					serverNode.SimulatedPacketLossRate = 0.1;
 					serverNode.SimulatedPacketShuffleRate = 0.1;
-
+#else
+					Console.Error.WriteLine("Running packet loss unit test on a RELEASE build, which is fruitless - packet loss simulation only works on DEBUG builds - you should run this test on a DEBUG configuration");
+#endif
 					Console.Out.WriteLine("Beginning guaranteed messages...");
 
 					const int numToSend = 1000;
