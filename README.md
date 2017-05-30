@@ -96,6 +96,8 @@ serverNode.OnReceived += msg => Console.Out.WriteLine("Received message: " + msg
 serverNode.Name = "Client"; // Any name that's sensible for you application is fine - this is mainly for clarity in logging
 ```
 
+Once you've setup your `Node`, call its `Start()` method to open a UDP socket and prepare for usage.
+
 ## Running
 Once you've instantiated a Node, to "run" the network layer simply call its `Update()` method periodically from within your app. Each invocation of this method pumps the event queue, handling incoming messages and sending outgoing messages as needed. How often you call this method depends on the needs of your app:
 * Calling more frequently will lead to lower latency in getting and sending network messages, but will use more CPU.
