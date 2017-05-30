@@ -28,9 +28,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="nunit.framework" />
     <Reference Include="msgpack-sharp">
       <HintPath>..\lib\msgpack-sharp.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.3.7.0\lib\net40\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -49,5 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Messages\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
