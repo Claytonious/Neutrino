@@ -3,5 +3,5 @@
 bin/
 obj/
 packages/
-
+TestResult.xml
 

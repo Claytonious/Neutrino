@@ -1,0 +1,7 @@
+language: csharp
+solution: Neutrino.sln
+install:
+  - nuget restore Neutrino.sln
+script:
+  - xbuild /p:Configuration=Release Neutrino.sln
+  - mono packages/NUnit.ConsoleRunner.3.6.1/tools/nunit3-console.exe NeutrinoTests/bin/Debug/NeutrinoTests.dll
